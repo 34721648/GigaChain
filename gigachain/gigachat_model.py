@@ -1,4 +1,6 @@
+"""GigaChatModel for GigaChat"""
 import os
+import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 
 import requests
@@ -28,6 +30,10 @@ class GigaChatModel(SimpleChatModel):
     user: Optional[str] = Field(default = os.environ.get("GIGA_USER", None))
 
     password: Optional[str] = Field(default = os.environ.get("GIGA_PASSWORD", None))
+
+    verbose: Optional[bool] = Field(default=False)
+
+    logger = logging.getLogger(__name__)
 
     @property
     def _llm_type(self) -> str:
@@ -96,6 +102,10 @@ class GigaChatModel(SimpleChatModel):
                    "profanity_check": self.profanity,
                    "messages": message_dicts}
         try:
+            if self.verbose:
+                print(f"Giga request (p): {payload}")
+                self.logger.info(f"Giga request: {payload}")
+
             response = requests.post(
                 self.api_url + "/v1/chat/completions",
                 headers=headers,
@@ -103,6 +113,10 @@ class GigaChatModel(SimpleChatModel):
                 timeout=600
             )
             text = self.transform_output(response)
+            
+            if self.verbose:
+                print(f"Giga response (p): {text}")
+                self.logger.info(f"Giga response: {text}")
 
         except Exception as error:
             raise ValueError(f"Error raised by the service: {error}")
